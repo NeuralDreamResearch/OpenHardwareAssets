@@ -120,4 +120,29 @@ begin
     c(2*N-1)<=carries(N-1);
 end Behavioral;
 ----------------------------------------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
 
+entity FixedPointFMA is
+    generic(N:natural:=32);
+    port(mul1, mul2, add: in std_logic_vector(N-1 downto 0); fused: out std_logic_vector(N-1 downto 0); overflow: out std_logic);
+end FixedPointFMA;
+
+
+architecture Behavioral of FixedPointFMA is
+    signal distillate: std_logic_vector(2*N-1 downto 0);
+    signal of_mul, of_add:std_logic;
+begin
+
+
+    multiplier: entity work.FixedPointMultiplier_MixedPrecision generic map(N=>N) port map(a=>mul1, b=>mul2, c=>distillate);
+    process(distillate) begin
+    if distillate(2*N-1 downto N) = (N-1 downto 0 => '0') then 
+        of_mul<='0'; 
+    else of_mul <= '1'; 
+        end if;
+    end process;
+    adder: entity work.FixedPointAdder generic map(N=>N) port map(a=>distillate(N-1 downto 0), b=>add, c=>fused, overflow=>of_add);
+    
+    overflow<=of_mul or of_add;
+end architecture Behavioral;
